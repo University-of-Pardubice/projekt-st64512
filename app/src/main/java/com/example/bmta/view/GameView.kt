@@ -6,11 +6,13 @@ import android.graphics.BitmapFactory
 import android.graphics.Canvas
 import android.os.Build
 import android.util.AttributeSet
+import android.view.MotionEvent
 import android.view.View
 import androidx.annotation.RequiresApi
 import com.example.bmta.R
 import com.example.bmta.model.Grass
 import com.example.bmta.model.Snake
+import kotlinx.coroutines.Runnable
 import kotlin.math.min
 
 class GameView(context: Context?, attrs: AttributeSet?) : View(context, attrs) {
@@ -22,7 +24,13 @@ class GameView(context: Context?, attrs: AttributeSet?) : View(context, attrs) {
     private var bmGrass2: Bitmap = BitmapFactory.decodeResource(this.resources, R.drawable.grass03)
 
     private var bmSnake: Bitmap
-    private lateinit var snake: Snake
+    private var snake: Snake
+
+    private var move : Boolean = false
+    private var mx : Float = 0F
+    private var my : Float = 0F
+
+    private val runnable : Runnable
 
     companion object {
         @JvmField
@@ -32,7 +40,7 @@ class GameView(context: Context?, attrs: AttributeSet?) : View(context, attrs) {
     init {
         this.bmGrass1 = Bitmap.createScaledBitmap(bmGrass1, sizeOfMap, sizeOfMap, true)
         this.bmGrass2 = Bitmap.createScaledBitmap(bmGrass2, sizeOfMap, sizeOfMap, true)
-        this.bmSnake = BitmapFactory.decodeResource(this.resources, R.drawable.snake1);
+        this.bmSnake = BitmapFactory.decodeResource(this.resources, R.drawable.snake1)
         this.bmSnake = Bitmap.createScaledBitmap(bmSnake, 14 * sizeOfMap, sizeOfMap, true)
         for (i in 0 until this.h) {
             for (j in 0 until this.w) {
@@ -48,17 +56,57 @@ class GameView(context: Context?, attrs: AttributeSet?) : View(context, attrs) {
             }
         }
         snake = Snake(bmSnake, arrGrass[126].x, arrGrass[126].y, 4)
+        runnable = Runnable { invalidate() }
+    }
+
+    override fun onTouchEvent(event: MotionEvent?): Boolean {
+        when (event?.actionMasked) {
+            MotionEvent.ACTION_DOWN -> {
+                mx = event.x
+                my = event.y
+                move = true}
+            MotionEvent.ACTION_MOVE -> {
+                if (!move) {
+                    mx = event.x
+                    my = event.y
+                    move = true
+                }
+                if (mx - event.x > 100*Constants.SCREEN_WIDTH/1080 && !snake.move_right) {
+                    mx = event.x
+                    my = event.y
+                    snake.setMoveLeft(true)
+                } else if ( event.x - mx > 100*Constants.SCREEN_WIDTH/1080 && !snake.move_left) {
+                    mx = event.x
+                    my = event.y
+                    snake.setMoveRight(true)
+                } else if (my - event.y > 100*Constants.SCREEN_WIDTH/1080 && !snake.move_bottom) {
+                    mx = event.x
+                    my = event.y
+                    snake.setMoveTop(true)
+                } else if (event.y - my > 100*Constants.SCREEN_WIDTH/1080 && !snake.move_top) {
+                    mx = event.x
+                    my = event.y
+                    snake.setMoveBottom(true)
+                }
+            }
+            MotionEvent.ACTION_UP -> {
+                mx = 0F
+                my = 0F
+                move = false
+            }
+        }
+        return true
     }
 
     @RequiresApi(Build.VERSION_CODES.Q)
     override fun draw(canvas: Canvas?) {
         super.draw(canvas)
-        //canvas?.drawColor(0xFF1A6100)
         for (i in 0 until arrGrass.size) {
             val grassBitmap = arrGrass[i]
             canvas?.drawBitmap(grassBitmap.bitmap, grassBitmap.x.toFloat(), grassBitmap.y.toFloat(), null)
         }
-
-        snake.draw(canvas);
+        snake.update()
+        snake.draw(canvas)
+        handler.postDelayed(runnable, 400)
     }
 }
