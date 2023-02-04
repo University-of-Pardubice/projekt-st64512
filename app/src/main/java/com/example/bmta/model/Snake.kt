@@ -36,7 +36,7 @@ class Snake (
         move_bottom = moveBottom
     }
 
-    private var arrPartSnake = ArrayList<PartSnake>()
+    var arrPartSnake = ArrayList<PartSnake>()
     private var bm_head_up : Bitmap
     private var bm_head_down : Bitmap
     private var bm_head_left : Bitmap
@@ -153,5 +153,26 @@ class Snake (
         move_right = false
         move_bottom = false
         move_top = false
+    }
+
+    fun grow() {
+        val lastSnakePart = this.arrPartSnake[length-1]
+        this.length += 1
+        if (lastSnakePart.bm === bm_tail_right)
+            this.arrPartSnake.add(
+                PartSnake(bm_tail_right, lastSnakePart.x - GameView.sizeOfMap, lastSnakePart.y)
+            )
+        else if (lastSnakePart.bm === bm_tail_left)
+            this.arrPartSnake.add(
+                PartSnake(bm_tail_left, lastSnakePart.x + GameView.sizeOfMap, lastSnakePart.y)
+            )
+        else if (lastSnakePart.bm === bm_tail_up)
+            this.arrPartSnake.add(
+                PartSnake(bm_tail_up, lastSnakePart.x, lastSnakePart.y + GameView.sizeOfMap)
+            )
+        else if (lastSnakePart.bm === bm_tail_down)
+            this.arrPartSnake.add(
+                PartSnake(bm_tail_down, lastSnakePart.x, lastSnakePart.y - GameView.sizeOfMap)
+            )
     }
 }

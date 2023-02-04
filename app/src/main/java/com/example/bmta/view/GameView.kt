@@ -4,16 +4,19 @@ import android.content.Context
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.graphics.Canvas
+import android.graphics.Rect
 import android.os.Build
 import android.util.AttributeSet
 import android.view.MotionEvent
 import android.view.View
 import androidx.annotation.RequiresApi
 import com.example.bmta.R
+import com.example.bmta.model.Apple
 import com.example.bmta.model.Grass
 import com.example.bmta.model.Snake
 import kotlinx.coroutines.Runnable
 import kotlin.math.min
+import kotlin.random.Random
 
 class GameView(context: Context?, attrs: AttributeSet?) : View(context, attrs) {
     private val h = 21
@@ -25,6 +28,9 @@ class GameView(context: Context?, attrs: AttributeSet?) : View(context, attrs) {
 
     private var bmSnake: Bitmap
     private var snake: Snake
+
+    private var bmApple: Bitmap
+    private var apple: Apple
 
     private var move : Boolean = false
     private var mx : Float = 0F
@@ -42,6 +48,8 @@ class GameView(context: Context?, attrs: AttributeSet?) : View(context, attrs) {
         this.bmGrass2 = Bitmap.createScaledBitmap(bmGrass2, sizeOfMap, sizeOfMap, true)
         this.bmSnake = BitmapFactory.decodeResource(this.resources, R.drawable.snake1)
         this.bmSnake = Bitmap.createScaledBitmap(bmSnake, 14 * sizeOfMap, sizeOfMap, true)
+        this.bmApple = BitmapFactory.decodeResource(this.resources, R.drawable.apple)
+        this.bmApple = Bitmap.createScaledBitmap(bmApple, sizeOfMap, sizeOfMap, true)
         for (i in 0 until this.h) {
             for (j in 0 until this.w) {
                 if ( (i+j) % 2 == 0 ) {
@@ -56,6 +64,7 @@ class GameView(context: Context?, attrs: AttributeSet?) : View(context, attrs) {
             }
         }
         snake = Snake(bmSnake, arrGrass[126].x, arrGrass[126].y, 4)
+        apple = Apple(bmApple, arrGrass[randomApple()[0]].x,  arrGrass[randomApple()[0]].y)
         runnable = Runnable { invalidate() }
     }
 
@@ -98,6 +107,34 @@ class GameView(context: Context?, attrs: AttributeSet?) : View(context, attrs) {
         return true
     }
 
+    fun randomApple(): IntArray {
+        var result = getRandomRectAndCoordinates()
+        var rect = result.first
+        var xy = result.second
+        var check = true
+        while (check) {
+            check = false
+            for (i in 0 until snake.arrPartSnake.size) {
+                if (rect.intersect(snake.arrPartSnake[i].getrBody())) {
+                    check = true
+                    result = getRandomRectAndCoordinates()
+                    rect = result.first
+                    xy = result.second
+                }
+            }
+        }
+        return xy
+    }
+
+    fun getRandomRectAndCoordinates(): Pair<Rect, IntArray> {
+        val xy = IntArray(2)
+        val r = Random
+        xy[0] = r.nextInt(arrGrass.size - 1)
+        xy[1] = r.nextInt(arrGrass.size - 1)
+        val rect = Rect(arrGrass[xy[0]].x, arrGrass[xy[1]].y,arrGrass[xy[0]].x + sizeOfMap, arrGrass[xy[1]].y + sizeOfMap)
+        return Pair(rect, xy)
+    }
+
     @RequiresApi(Build.VERSION_CODES.Q)
     override fun draw(canvas: Canvas?) {
         super.draw(canvas)
@@ -107,6 +144,13 @@ class GameView(context: Context?, attrs: AttributeSet?) : View(context, attrs) {
         }
         snake.update()
         snake.draw(canvas)
+        apple.draw(canvas)
+        // when eat apple
+        if (snake.arrPartSnake[0].getrBody().intersect(apple.r)) {
+            val applePosition = randomApple()
+            apple.reset(arrGrass[applePosition[0]].x, arrGrass[applePosition[1]].y)
+            snake.grow()
+        }
         handler.postDelayed(runnable, 400)
     }
 }
