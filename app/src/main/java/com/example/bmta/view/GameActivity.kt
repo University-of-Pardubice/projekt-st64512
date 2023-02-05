@@ -75,11 +75,14 @@ class GameActivity : AppCompatActivity() {
 
     fun writeScoreResult() {
         val gson = Gson()
-        val jsonString: String = this.resources.openRawResource(R.raw.scores).use { it.reader().readText() }
-        var intArray = gson.fromJson(jsonString, IntArray::class.java)
-        intArray = intArray.plus(game.score)
-
         val file = File(this.getExternalFilesDir(null), "scores.json")
+        var intArray = arrayOf<Int>()
+        if (file.exists()) {
+            val jsonString = file.readText()
+            intArray = gson.fromJson(jsonString, Array<Int>::class.java)
+
+        }
+        intArray = intArray.plus(game.score)
         file.writeText(gson.toJson(intArray))
     }
 
