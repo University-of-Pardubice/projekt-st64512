@@ -7,6 +7,7 @@ import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.example.bmta.R
 import com.google.gson.Gson
+import java.io.File
 
 class ScoreActivity : AppCompatActivity() {
 
@@ -25,14 +26,14 @@ class ScoreActivity : AppCompatActivity() {
     }
 
     fun readScoresFromJson () : Array<Int> {
-        var scoreArray: Array<Int> = arrayOf()
-        try {
-            val jsonString: String = this.resources.openRawResource(R.raw.scores).use { it.reader().readText() }
-            val gson = Gson()
-            scoreArray = gson.fromJson(jsonString, Array<Int>::class.java)
-        } catch (e: Exception) {
-            e.printStackTrace()
+        val gson = Gson()
+        val file = File(this.getExternalFilesDir(null), "scores.json")
+        var intArray = arrayOf<Int>()
+        if (file.exists()) {
+            val jsonString = file.readText()
+            intArray = gson.fromJson(jsonString, Array<Int>::class.java)
+
         }
-        return scoreArray;
+        return intArray
     }
 }
