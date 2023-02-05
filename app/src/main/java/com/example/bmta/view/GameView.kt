@@ -9,25 +9,31 @@ import android.os.Build
 import android.util.AttributeSet
 import android.view.MotionEvent
 import android.view.View
+import android.widget.TextView
 import androidx.annotation.RequiresApi
 import com.example.bmta.R
 import com.example.bmta.model.Apple
 import com.example.bmta.model.Grass
 import com.example.bmta.model.Snake
+import com.example.bmta.viewmodel.Game
 import kotlinx.coroutines.Runnable
 import kotlin.math.min
 import kotlin.random.Random
 
 class GameView(context: Context?, attrs: AttributeSet?) : View(context, attrs) {
-    private val h = 21
-    private val w = 12
+    lateinit var game : Game
+    lateinit var txtViewScore: TextView
+    lateinit var gameActivity: GameActivity
+    val h = 21
+    val w = 12
 
-    private val arrGrass = ArrayList<Grass>()
+    val arrGrass = ArrayList<Grass>()
     private var bmGrass1: Bitmap = BitmapFactory.decodeResource(this.resources, R.drawable.grass)
     private var bmGrass2: Bitmap = BitmapFactory.decodeResource(this.resources, R.drawable.grass03)
 
     private var bmSnake: Bitmap
     private var snake: Snake
+    private val snakeInitLength = 4
 
     private var bmApple: Bitmap
     private var apple: Apple
@@ -63,7 +69,7 @@ class GameView(context: Context?, attrs: AttributeSet?) : View(context, attrs) {
                 }
             }
         }
-        snake = Snake(bmSnake, arrGrass[126].x, arrGrass[126].y, 4)
+        snake = Snake(bmSnake, arrGrass[126].x, arrGrass[126].y, snakeInitLength)
         apple = Apple(bmApple, arrGrass[randomApple()[0]].x,  arrGrass[randomApple()[0]].y)
         runnable = Runnable { invalidate() }
     }
@@ -107,6 +113,35 @@ class GameView(context: Context?, attrs: AttributeSet?) : View(context, attrs) {
         return true
     }
 
+    fun isGameFinished(): String {
+        if (isWon()) return "Vyhrál jsi!"
+        if (isSnakePartEated()) return "Kousnul ses! Prohrál jsi!"
+        if (isSnakeWallEated()) return "Bacha zeď! Prohrál jsi!"
+        return ""
+    }
+
+    fun isWon() : Boolean {
+        return (h * w) - (snakeInitLength + game.score) == 0
+    }
+
+    fun isSnakePartEated() : Boolean {
+        for (i in 1 until snake.arrPartSnake.size) {
+            if (snake.arrPartSnake[0].getrBody().intersect(snake.arrPartSnake[i].getrBody())) {
+                return true
+            }
+        }
+        return false
+    }
+
+    fun isSnakeWallEated() : Boolean {
+        for (i in 0 until arrGrass.size) {
+            if (snake.arrPartSnake[0].getrBody().intersect(arrGrass[i].r)) {
+                return false
+            }
+        }
+        return true
+    }
+
     fun randomApple(): IntArray {
         var result = getRandomRectAndCoordinates()
         var rect = result.first
@@ -145,12 +180,28 @@ class GameView(context: Context?, attrs: AttributeSet?) : View(context, attrs) {
         snake.update()
         snake.draw(canvas)
         apple.draw(canvas)
-        // when eat apple
+
         if (snake.arrPartSnake[0].getrBody().intersect(apple.r)) {
-            val applePosition = randomApple()
-            apple.reset(arrGrass[applePosition[0]].x, arrGrass[applePosition[1]].y)
             snake.grow()
+            refreshScore()
         }
-        handler.postDelayed(runnable, 400)
+
+        // when eat wall or self
+        val isEndGame = isGameFinished()
+        if (isEndGame.isNotEmpty()) {
+            gameActivity.endGame(isEndGame)
+        } else {
+            // when eat apple
+            if (snake.arrPartSnake[0].getrBody().intersect(apple.r)) {
+                val applePosition = randomApple()
+                apple.reset(arrGrass[applePosition[0]].x, arrGrass[applePosition[1]].y)
+            }
+            handler.postDelayed(runnable, 400)
+        }
+    }
+
+    fun refreshScore() {
+        game.score += 1
+        txtViewScore.text = "× " + game.score.toString()
     }
 }
