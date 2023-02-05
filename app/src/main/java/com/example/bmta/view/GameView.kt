@@ -9,16 +9,20 @@ import android.os.Build
 import android.util.AttributeSet
 import android.view.MotionEvent
 import android.view.View
+import android.widget.TextView
 import androidx.annotation.RequiresApi
 import com.example.bmta.R
 import com.example.bmta.model.Apple
 import com.example.bmta.model.Grass
 import com.example.bmta.model.Snake
+import com.example.bmta.viewmodel.Game
 import kotlinx.coroutines.Runnable
 import kotlin.math.min
 import kotlin.random.Random
 
 class GameView(context: Context?, attrs: AttributeSet?) : View(context, attrs) {
+    lateinit var game : Game
+    lateinit var txtViewScore: TextView
     private val h = 21
     private val w = 12
 
@@ -150,7 +154,13 @@ class GameView(context: Context?, attrs: AttributeSet?) : View(context, attrs) {
             val applePosition = randomApple()
             apple.reset(arrGrass[applePosition[0]].x, arrGrass[applePosition[1]].y)
             snake.grow()
+            refreshScore()
         }
         handler.postDelayed(runnable, 400)
+    }
+
+    fun refreshScore() {
+        game.score += 1
+        txtViewScore.text = "× " + game.score.toString();
     }
 }
